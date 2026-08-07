@@ -21,6 +21,11 @@ if gpus:
 
 import urllib.request
 
+try:
+    import tf_keras as keras
+except ImportError:
+    from tensorflow import keras
+
 MODEL_PATH = "Trained_Model.keras"
 MODEL_URL = "https://media.githubusercontent.com/media/vinodarali/Eye-disease-detection/main/Trained_Model.keras"
 
@@ -37,7 +42,7 @@ def load_my_model():
             st.error(f"Failed to download model weights: {e}")
             raise e
 
-    return tf.keras.models.load_model(MODEL_PATH, compile=False)
+    return keras.models.load_model(MODEL_PATH, compile=False)
 
 model = load_my_model()
 
