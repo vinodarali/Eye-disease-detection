@@ -19,24 +19,25 @@ if gpus:
     except RuntimeError as e:
         print(e)
 
-import subprocess
+import urllib.request
+
+MODEL_PATH = "Trained_Model.keras"
+MODEL_URL = "https://media.githubusercontent.com/media/vinodarali/Eye-disease-detection/main/Trained_Model.keras"
 
 # --- 2. CACHED MODEL LOADING ---
 @st.cache_resource
 def load_my_model():
-    model_path = "Trained_Model.keras"
-    # Check if the file is an un-pulled Git LFS pointer (< 1KB)
-    if os.path.exists(model_path) and os.path.getsize(model_path) < 1000:
+    # If model file is missing or is just a small Git LFS pointer text file (< 10KB), download real binary
+    if not os.path.exists(MODEL_PATH) or os.path.getsize(MODEL_PATH) < 10000:
+        st.info("Downloading model weights (66 MB)... Please wait a moment.")
         try:
-            subprocess.run(["git", "lfs", "pull"], check=True)
+            urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
+            st.success("Model weights downloaded successfully!")
         except Exception as e:
-            print(f"Git LFS pull error: {e}")
+            st.error(f"Failed to download model weights: {e}")
+            raise e
 
-    try:
-        return tf.keras.models.load_model(model_path, compile=False)
-    except Exception as e:
-        # Fallback if compile=False or format requires custom handling
-        return tf.keras.models.load_model(model_path)
+    return tf.keras.models.load_model(MODEL_PATH, compile=False)
 
 model = load_my_model()
 
