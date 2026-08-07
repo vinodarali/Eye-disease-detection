@@ -2,28 +2,47 @@ import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.applications.mobilenet_v3 import preprocess_input
 import numpy as np
-from recommendation import cnv,dme,drusen,normal
+from recommendation import cnv, dme, drusen, normal
 import tempfile
+import os
 
+# --- 1. SYSTEM OPTIMIZATIONS (Fixes the Hanging/Loading issues) ---
+# Bypasses the Protobuf version conflict
+os.environ['PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION'] = 'python'
 
-#Tensorflow Model Prediction
+# Prevents TensorFlow from locking all VRAM on your RTX 4050
+gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+    try:
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+    except RuntimeError as e:
+        print(e)
+
+# --- 2. CACHED MODEL LOADING ---
+@st.cache_resource
+def load_my_model():
+    # This loads the model into GPU memory ONCE
+    return tf.keras.models.load_model("Trained_Model.keras")
+
+model = load_my_model()
+
+# --- 3. PREDICTION FUNCTION ---
 def model_prediction(test_image_path):
-    model = tf.keras.models.load_model("Trained_Model.keras")
     img = tf.keras.utils.load_img(test_image_path, target_size=(224, 224))
     x = tf.keras.utils.img_to_array(img)
     x = np.expand_dims(x, axis=0)
     x = preprocess_input(x)
+    # Using the pre-loaded global model
     predictions = model.predict(x)
     return np.argmax(predictions) #return index of max element
 
-#Sidebar
+# --- 4. SIDEBAR ---
 st.sidebar.title("Dashboard")
 app_mode = st.sidebar.selectbox("Select Page",["Home","About","Disease Identification"])
 
-#Main Page
+# --- 5. MAIN PAGE ---
 if(app_mode=="Home"):
-    # image_path = "home_page.jpeg"
-    # st.image(image_path,use_column_width=True)
     st.markdown("""
     ## **OCT Retinal Analysis Platform**
 
@@ -86,7 +105,7 @@ Have questions or need assistance? [Contact our support team](#) for more inform
 
     """)
 
-#About Project
+# --- 6. ABOUT PROJECT ---
 elif(app_mode=="About"):
     st.header("About")
     st.markdown("""
@@ -112,7 +131,7 @@ elif(app_mode=="About"):
 
                 """)
 
-#Prediction Page
+# --- 7. PREDICTION PAGE ---
 elif(app_mode=="Disease Identification"):
     st.header("Welcome to the Retinal OCT Analysis Platform")
     test_image = st.file_uploader("Upload your Image:")
@@ -121,6 +140,7 @@ elif(app_mode=="Disease Identification"):
         with tempfile.NamedTemporaryFile(delete=False, suffix=test_image.name) as tmp_file:
             tmp_file.write(test_image.read())
             temp_file_path = tmp_file.name
+
     #Predict button
     if(st.button("Predict")) and test_image is not None:
         with st.spinner("Please Wait.."):

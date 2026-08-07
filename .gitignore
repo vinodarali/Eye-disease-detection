@@ -1,0 +1,30 @@
+# Python & Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+
+# IDE & Editor Settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+
+# Large Datasets (100k+ images, 7GB+)
+train/
+val/
+test/
+
+# Duplicate/temporary model files (Trained_Model.keras is tracked via Git LFS)
+Trained_Model.h5
