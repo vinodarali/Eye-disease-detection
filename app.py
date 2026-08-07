@@ -19,11 +19,24 @@ if gpus:
     except RuntimeError as e:
         print(e)
 
+import subprocess
+
 # --- 2. CACHED MODEL LOADING ---
 @st.cache_resource
 def load_my_model():
-    # This loads the model into GPU memory ONCE
-    return tf.keras.models.load_model("Trained_Model.keras")
+    model_path = "Trained_Model.keras"
+    # Check if the file is an un-pulled Git LFS pointer (< 1KB)
+    if os.path.exists(model_path) and os.path.getsize(model_path) < 1000:
+        try:
+            subprocess.run(["git", "lfs", "pull"], check=True)
+        except Exception as e:
+            print(f"Git LFS pull error: {e}")
+
+    try:
+        return tf.keras.models.load_model(model_path, compile=False)
+    except Exception as e:
+        # Fallback if compile=False or format requires custom handling
+        return tf.keras.models.load_model(model_path)
 
 model = load_my_model()
 
